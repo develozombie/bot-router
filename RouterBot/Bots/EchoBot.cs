@@ -60,52 +60,25 @@ namespace RouterBot.Bots
                     switch (conversacion.Eleccion)
                     {
                         case "tarjetas":
-                            if (_menuActividades.Contains(respuesta.ToLower()))
-                            {
-                                conversacion.Eleccion = respuesta;
-                                conversacion.Cambio = true;
-                                await ConsultarBotAsync(turnContext, Configuration[$"Llaves:{respuesta.ToLower()}"]);
-                                await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
-                            }
-                            if (respuesta.ToLower().Equals("menu"))
-                            {
-                                reply = MostrarMenuInicial();
-                                await turnContext.SendActivityAsync(reply, cancellationToken);
-                            }
-                            if(!conversacion.Cambio && !respuesta.ToLower().Equals("menu"))
-                                replyText = ConsultarBotAsync(turnContext, Configuration["Llaves:Tarjetas"]).Result;                       
+                            await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
+                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
+                                replyText = ConsultarBotAsync(turnContext, Configuration["Llaves:tarjetas"]).Result;                       
                             break;
                         case "agente":
-                            if (_menuActividades.Contains(respuesta.ToLower()))
-                            {
-                                conversacion.Eleccion = respuesta;
-                                conversacion.Cambio = true;
-                                await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
-                            }
-                            if (respuesta.ToLower().Equals("menu"))
-                            {
-                                reply = MostrarMenuInicial();
-                                await turnContext.SendActivityAsync(reply, cancellationToken);
-                            }
-                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu"))
+                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
                                 await turnContext.SendActivityAsync("Acá funcionará el Handoff del Bot");
                             break;
                         case "cuentas":
-                            if (_menuActividades.Contains(respuesta.ToLower()))
-                            {
-                                conversacion.Eleccion = respuesta;
-                                conversacion.Cambio = true;
-                                await ConsultarBotAsync(turnContext, Configuration[$"Llaves:{respuesta.ToLower()}"]);
-                                await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
-                            }
-                            if (respuesta.ToLower().Equals("menu"))
-                            {
-                                reply = MostrarMenuInicial();
-                                await turnContext.SendActivityAsync(reply, cancellationToken);
-                            }
-                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu"))
-                                replyText = ConsultarBotAsync(turnContext, Configuration["Llaves:Cuentas"]).Result;
+                            await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
+                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
+                                replyText = ConsultarBotAsync(turnContext, Configuration["Llaves:cuentas"]).Result;
                             break;
+                        case "preguntas":
+                            await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
+                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
+                                replyText = ConsultaQnA(turnContext);
+                            break;
+
                     }
                 }
                 else
@@ -121,23 +94,54 @@ namespace RouterBot.Bots
                             await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
                             break;
                         case "agente":
-                            conversacion.Eleccion = respuesta;
                             await turnContext.SendActivityAsync($"Acá funcionará el Handoff del Bot");
                             break;
                         case "cuentas":
                             conversacion.Eleccion = respuesta;
                             await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
                             break;
+                        case "preguntas":
+                            conversacion.Eleccion = respuesta;
+                            await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
+                            break;
                         default:
-                            await turnContext.SendActivityAsync($"Disculpame {turnContext.Activity.From.Name}, no te he entendido");
-                            reply = MostrarMenuInicial();
-                            await turnContext.SendActivityAsync(reply, cancellationToken);
+                            replyText = ConsultaQnA(turnContext);
                             break;
                     }
                 }
             }
             if(!string.IsNullOrEmpty(replyText))
                 await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
+        }
+
+        private async Task ValidarYEnviarEscenario(ITurnContext<IMessageActivity> turnContext, Conversacion conversacion, CancellationToken cancellationToken)
+        {
+            string respuesta = turnContext.Activity.Text;
+            Activity reply;
+            if (_menuActividades.Contains(respuesta.ToLower()))
+            {
+                conversacion.Eleccion = respuesta;
+                conversacion.Cambio = true;
+                await ConsultarBotAsync(turnContext, Configuration[$"Llaves:{respuesta.ToLower()}"]);
+                await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
+            }
+            switch (respuesta.ToLower())
+            {
+                case "menu":
+                    reply = MostrarMenuInicial();
+                    await turnContext.SendActivityAsync(reply, cancellationToken);
+                    break;
+                case "preguntas":
+                    conversacion.Eleccion = respuesta.ToLower();
+                    await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
+                    break;
+                case "/salir":
+                    conversacion.Eleccion = conversacion.Token = conversacion.Conv = null;
+                    conversacion.Cambio = true;
+                    await turnContext.SendActivityAsync($"Gracias {turnContext.Activity.From.Name}, acá estaré cuando me necesites.");
+                    break;
+            }
+
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
@@ -170,6 +174,12 @@ namespace RouterBot.Bots
                     Type = ActionTypes.ImBack
                 });
             }
+            reply.SuggestedActions.Actions.Add(new CardAction()
+            {
+                Title = "preguntas",
+                Value = "preguntas",
+                Type = ActionTypes.ImBack
+            });
             return reply;
         }
 
@@ -245,6 +255,30 @@ namespace RouterBot.Bots
                 var resupuesta = textoArray.Value<string>("text"); 
                 return resupuesta;
             }
+        }
+
+        public string ConsultaQnA(ITurnContext context)
+        {
+            string respuesta;
+            using (WebClient wc = new WebClient())
+            {
+                string URI = "https://qnameu2chccd01.azurewebsites.net/qnamaker/knowledgebases/87d9abc9-08e9-4f70-906a-f015ebce3faf/generateAnswer";
+
+                var pregunta = new { question = $"{context.Activity.Text.ToLower()}" };
+                var dataString = Newtonsoft.Json.JsonConvert.SerializeObject(pregunta);
+                wc.Headers["Authorization"] = $"EndpointKey {Configuration["Llaves:preguntas"]}";
+                wc.Headers[HttpRequestHeader.ContentType] = "application/json; charset=utf-8";
+                string HtmlResult = wc.UploadString(URI, "POST", dataString);
+                var textoresult = JObject.Parse(HtmlResult);
+                JObject rr = (JObject)(textoresult.SelectToken("answers") as JArray).First();
+                respuesta = rr.Value<string>("answer");
+                if (respuesta.Equals("No good match found in KB."))
+                {
+                    respuesta = "Como todo gran humano... digo, robot, sigo aprendiendo, todavía no puedo responder a esa pregunta, pero tal vez la respuesta es 42";
+                }
+            }
+
+            return respuesta;
         }
     }
 }
