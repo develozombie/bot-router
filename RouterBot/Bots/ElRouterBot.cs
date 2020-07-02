@@ -61,16 +61,16 @@ namespace RouterBot.Bots
                     {
                         case "tarjetas": case "cuentas":
                             await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
-                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
+                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("/salir"))
                                 replyText = ConsultarBotAsync(turnContext).Result;                       
                             break;
                         case "agente":
-                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
+                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("/salir"))
                                 await turnContext.SendActivityAsync("Acá funcionará el Handoff del Bot");
                             break;
                         case "preguntas":
                             await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
-                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
+                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("/salir"))
                                 replyText = ConsultaQnA(turnContext);
                             break;
 
