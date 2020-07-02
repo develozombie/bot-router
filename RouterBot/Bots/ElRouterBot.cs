@@ -124,7 +124,8 @@ namespace RouterBot.Bots
                     await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
                     break;
                 case "/salir":
-                    conversacion.Eleccion = conversacion.Token = conversacion.Conv = null;
+                    conversacion.Eleccion = "preguntas";
+                    conversacion.Token = conversacion.Conv = null;
                     conversacion.Cambio = true;
                     await turnContext.SendActivityAsync($"Gracias {turnContext.Activity.From.Name}, acá estaré cuando me necesites.");
                     break;
