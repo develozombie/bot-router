@@ -59,19 +59,15 @@ namespace RouterBot.Bots
                     conversacion.Cambio = false;
                     switch (conversacion.Eleccion)
                     {
-                        case "tarjetas":
+                        case "tarjetas": 
+                        case "cuentas":
                             await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
                             if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
-                                replyText = ConsultarBotAsync(turnContext, Configuration["Llaves:tarjetas"]).Result;                       
+                                replyText = ConsultarBotAsync(turnContext, Configuration[$"Llaves:{respuesta.ToLower()}"]).Result;                       
                             break;
                         case "agente":
                             if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
                                 await turnContext.SendActivityAsync("Acá funcionará el Handoff del Bot");
-                            break;
-                        case "cuentas":
-                            await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
-                            if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
-                                replyText = ConsultarBotAsync(turnContext, Configuration["Llaves:cuentas"]).Result;
                             break;
                         case "preguntas":
                             await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
@@ -85,24 +81,18 @@ namespace RouterBot.Bots
                 {
                     switch (respuesta)
                     {
+                        case "tarjetas":
+                        case "cuentas":
+                        case "preguntas":
+                            conversacion.Eleccion = respuesta;
+                            await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
+                            break;
                         case "menu":
                             reply = MostrarMenuInicial();
                             await turnContext.SendActivityAsync(reply, cancellationToken);
                             break;
-                        case "tarjetas":
-                            conversacion.Eleccion = respuesta;
-                            await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
-                            break;
                         case "agente":
                             await turnContext.SendActivityAsync($"Acá funcionará el Handoff del Bot");
-                            break;
-                        case "cuentas":
-                            conversacion.Eleccion = respuesta;
-                            await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
-                            break;
-                        case "preguntas":
-                            conversacion.Eleccion = respuesta;
-                            await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
                             break;
                         default:
                             replyText = ConsultaQnA(turnContext);
