@@ -20,7 +20,7 @@ using Activity = Microsoft.Bot.Schema.Activity;
 
 namespace RouterBot.Bots
 {
-    public class EchoBot : ActivityHandler
+    public class ElRouterBot : ActivityHandler
     {
 
         private static readonly string[] _menuActividades =
@@ -32,7 +32,7 @@ namespace RouterBot.Bots
         private BotState _conversationState;
         private BotState _userState;
         private readonly IConfiguration Configuration;
-        public EchoBot(ConversationState conversationState, UserState userState, IConfiguration configuration)
+        public ElRouterBot(ConversationState conversationState, UserState userState, IConfiguration configuration)
         {
             Configuration = configuration;
             _conversationState = conversationState;
@@ -59,11 +59,10 @@ namespace RouterBot.Bots
                     conversacion.Cambio = false;
                     switch (conversacion.Eleccion)
                     {
-                        case "tarjetas": 
-                        case "cuentas":
+                        case "tarjetas": case "cuentas":
                             await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
                             if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
-                                replyText = ConsultarBotAsync(turnContext, Configuration[$"Llaves:{respuesta.ToLower()}"]).Result;                       
+                                replyText = ConsultarBotAsync(turnContext).Result;                       
                             break;
                         case "agente":
                             if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("salir"))
@@ -81,9 +80,7 @@ namespace RouterBot.Bots
                 {
                     switch (respuesta)
                     {
-                        case "tarjetas":
-                        case "cuentas":
-                        case "preguntas":
+                        case "tarjetas": case "cuentas": case "preguntas":
                             conversacion.Eleccion = respuesta;
                             await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
                             break;
@@ -112,7 +109,7 @@ namespace RouterBot.Bots
             {
                 conversacion.Eleccion = respuesta;
                 conversacion.Cambio = true;
-                await ConsultarBotAsync(turnContext, Configuration[$"Llaves:{respuesta.ToLower()}"]);
+                await ConsultarBotAsync(turnContext);
                 await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
             }
             switch (respuesta.ToLower())
@@ -182,14 +179,15 @@ namespace RouterBot.Bots
             await _userState.SaveChangesAsync(turnContext, false, cancellationToken);
         }
 
-        public async Task<string> ConsultarBotAsync(ITurnContext turnContext, string DirectToken)
+        public async Task<string> ConsultarBotAsync(ITurnContext turnContext)
         {
-            var userStateAccessors = _userState.CreateProperty<Conversacion>(nameof(Conversacion));
-            var conv = await userStateAccessors.GetAsync(turnContext, () => new Conversacion());
             string token = "", conversacion = "";
             string idconversacion, URI, HtmlResult;
             JObject textoresult;
-            if(conv.Cambio)
+            var userStateAccessors = _userState.CreateProperty<Conversacion>(nameof(Conversacion));
+            var conv = await userStateAccessors.GetAsync(turnContext, () => new Conversacion());
+            var DirectToken = Configuration[$"Llaves:{conv.Eleccion}"];
+            if (conv.Cambio)
             {
                 conv.Token = conv.Conv = null;
                 conv.Cambio = false;
