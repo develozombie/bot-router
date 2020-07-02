@@ -25,6 +25,7 @@ namespace RouterBot.Bots
 
         private static readonly string[] _menuActividades =
         {
+            "composer",
             "tarjetas",
             "agente",
             "cuentas"
@@ -59,7 +60,7 @@ namespace RouterBot.Bots
                     conversacion.Cambio = false;
                     switch (conversacion.Eleccion)
                     {
-                        case "tarjetas": case "cuentas":
+                        case "tarjetas": case "cuentas": case "composer":
                             await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
                             if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("/salir"))
                                 replyText = ConsultarBotAsync(turnContext, conversacion).Result;
@@ -80,7 +81,7 @@ namespace RouterBot.Bots
                 {
                     switch (respuesta)
                     {
-                        case "tarjetas": case "cuentas": case "preguntas":
+                        case "tarjetas": case "cuentas": case "preguntas": case "composer":
                             conversacion.Eleccion = respuesta;
                             await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
                             break;
@@ -203,10 +204,19 @@ namespace RouterBot.Bots
                     wc.Headers[HttpRequestHeader.ContentType] = "application/json";
                     HtmlResult = wc.UploadString(URI, "POST");
                     textoresult = JObject.Parse(HtmlResult);
-                    token = textoresult["token"].ToString();
-                    conversacion = textoresult["conversationId"].ToString();
-                    conv.Token = token;
-                    conv.Conv = conversacion;
+                    try
+                    {
+                        token = textoresult["token"].ToString();
+                        conversacion = textoresult["conversationId"].ToString();
+                        conv.Token = token;
+                        conv.Conv = conversacion;
+                    }
+                    catch (Exception)
+                    {
+                        return "REF:01 - Acabo de encontrar que me sobró un perno y algo anda mal, por favor intentalo más tarde...";
+
+                        throw;
+                    }
                 }
                 else
                 {
@@ -228,8 +238,16 @@ namespace RouterBot.Bots
                 URI = $"https://directline.botframework.com/v3/directline/conversations/{conversacion}/activities";
                 wc.Headers["Authorization"] = $"Bearer {token}";
                 wc.Headers[HttpRequestHeader.ContentType] = "application/json";
-                HtmlResult = wc.UploadString(URI, "POST", dataString);
-                textoresult = JObject.Parse(HtmlResult);
+                try
+                {
+                    HtmlResult = wc.UploadString(URI, "POST", dataString);
+                    textoresult = JObject.Parse(HtmlResult);
+                }
+                catch (Exception)
+                {
+                    return "REF:01 - Acabo de encontrar que me sobró un perno y algo anda mal, por favor intentalo más tarde...";
+                    throw;
+                }
                 var arrayid = textoresult["id"].ToString().Split("|");
                 idconversacion = arrayid[1].ToString();
 
@@ -237,8 +255,17 @@ namespace RouterBot.Bots
                 URI = $"https://directline.botframework.com/v3/directline/conversations/{conversacion}/activities?watermark={idconversacion}";
                 wc.Headers["Authorization"] = $"Bearer {token}";
                 wc.Headers[HttpRequestHeader.ContentType] = "application/json";
-                HtmlResult = wc.DownloadString(URI);
-                textoresult = JObject.Parse(HtmlResult);
+                try
+                {
+                    HtmlResult = wc.DownloadString(URI);
+                    textoresult = JObject.Parse(HtmlResult);
+                    
+                }
+                catch (Exception)
+                {
+                    return "REF:01 - Acabo de encontrar que me sobró un perno y algo anda mal, por favor intentalo más tarde...";
+                    throw;
+                }
                 JObject textoArray = (JObject)(textoresult.SelectToken("activities") as JArray).First();
                 var resupuesta = textoArray.Value<string>("text"); 
                 return resupuesta;
