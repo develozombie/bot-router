@@ -62,7 +62,7 @@ namespace RouterBot.Bots
                         case "tarjetas": case "cuentas":
                             await ValidarYEnviarEscenario(turnContext, conversacion, cancellationToken);
                             if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("/salir"))
-                                replyText = ConsultarBotAsync(turnContext).Result;                       
+                                replyText = ConsultarBotAsync(turnContext, conversacion).Result;
                             break;
                         case "agente":
                             if (!conversacion.Cambio && !respuesta.ToLower().Equals("menu") && !respuesta.ToLower().Equals("preguntas") && !respuesta.ToLower().Equals("/salir"))
@@ -96,9 +96,10 @@ namespace RouterBot.Bots
                             break;
                     }
                 }
+                if (!string.IsNullOrEmpty(replyText) && !conversacion.Cambio)
+                    await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
             }
-            if(!string.IsNullOrEmpty(replyText))
-                await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
+
         }
 
         private async Task ValidarYEnviarEscenario(ITurnContext<IMessageActivity> turnContext, Conversacion conversacion, CancellationToken cancellationToken)
@@ -107,10 +108,10 @@ namespace RouterBot.Bots
             Activity reply;
             if (_menuActividades.Contains(respuesta.ToLower()))
             {
-                conversacion.Eleccion = respuesta;
+                conversacion.Eleccion = respuesta.ToLower();
                 conversacion.Cambio = true;
-                await ConsultarBotAsync(turnContext);
                 await turnContext.SendActivityAsync($"Perfecto, ahora estás comunicado con el área de {respuesta}, cómo puedo ayudarte?");
+                await ConsultarBotAsync(turnContext, conversacion);
             }
             switch (respuesta.ToLower())
             {
@@ -179,13 +180,11 @@ namespace RouterBot.Bots
             await _userState.SaveChangesAsync(turnContext, false, cancellationToken);
         }
 
-        public async Task<string> ConsultarBotAsync(ITurnContext turnContext)
+        public async Task<string> ConsultarBotAsync(ITurnContext turnContext, Conversacion conv)
         {
             string token = "", conversacion = "";
             string idconversacion, URI, HtmlResult;
             JObject textoresult;
-            var userStateAccessors = _userState.CreateProperty<Conversacion>(nameof(Conversacion));
-            var conv = await userStateAccessors.GetAsync(turnContext, () => new Conversacion());
             var DirectToken = Configuration[$"Llaves:{conv.Eleccion}"];
             if (conv.Cambio)
             {

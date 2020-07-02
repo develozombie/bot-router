@@ -15,8 +15,7 @@ namespace RouterBot.Model
         public string Conv { get; set; }
         //referencia al cambio de intent de conversación
         public bool Cambio { get; set; }
-        //referencia a una conversación terminada
-        public bool Terminar { get; set; }
+
     }
 
 }
